@@ -18,7 +18,7 @@ export class GameEngine implements EngineHook {
 
     frameTick = (context: FrameContext): void => {
         this.inputSystem.update();
-        this.sceneSystem.currentScene?.update?.(context.deltaTime);
+        this.sceneSystem.currentScene?.update?.(context);
         this.sceneSystem.currentScene?.render?.(context);
     };
 
