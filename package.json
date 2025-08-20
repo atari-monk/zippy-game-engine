@@ -1,6 +1,6 @@
 {
     "name": "zippy-game-engine",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "description": "A lightweight game engine for web games",
     "type": "module",
     "main": "./dist/index.js",
