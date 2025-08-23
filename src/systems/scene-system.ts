@@ -1,9 +1,21 @@
+import type { FrameContext } from "zippy-shared-lib";
 import type { Scene } from "../interfaces/scene.js";
+
+export type SceneSystemMode = "current" | "all";
 
 export class SceneSystem {
     #currentScene: Scene | undefined;
     #scenes: Map<string, Scene> = new Map();
     #sceneChangeCallbacks: Set<() => void> = new Set();
+    #mode: SceneSystemMode = "current";
+
+    setMode(mode: SceneSystemMode): void {
+        this.#mode = mode;
+    }
+
+    getMode(): SceneSystemMode {
+        return this.#mode;
+    }
 
     registerScene(name: string, sceneModule: Scene): void {
         this.#scenes.set(name, sceneModule);
@@ -30,6 +42,18 @@ export class SceneSystem {
         this.#sceneChangeCallbacks.forEach((callback) => callback());
     }
 
+    updateAllScenes(context: FrameContext): void {
+        for (const scene of this.#scenes.values()) {
+            scene.update?.(context);
+        }
+    }
+
+    renderAllScenes(context: FrameContext): void {
+        for (const scene of this.#scenes.values()) {
+            scene.render?.(context);
+        }
+    }
+
     get availableScenes(): Array<{ name: string; displayName: string }> {
         return Array.from(this.#scenes.keys()).map((name) => ({
             name,
@@ -43,6 +67,10 @@ export class SceneSystem {
 
     get currentScene(): Scene | undefined {
         return this.#currentScene;
+    }
+
+    getAllScenes(): Scene[] {
+        return Array.from(this.#scenes.values());
     }
 
     onSceneChange(callback: () => void): () => void {

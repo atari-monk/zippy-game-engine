@@ -1,10 +1,11 @@
 import type { FrameContext, EngineHook } from "zippy-shared-lib";
 import type { Scene } from "../interfaces/scene.js";
-import { SceneSystem } from "../systems/scene-system.js";
+import { SceneSystem, type SceneSystemMode } from "../systems/scene-system.js";
 import type { InputSystem } from "../systems/input/input-system.js";
 
 export class GameEngine implements EngineHook {
-    debugMode: boolean = true;
+    debugMode: boolean = false;
+    private sceneMode: SceneSystemMode = "current";
 
     constructor(
         private readonly inputSystem: InputSystem,
@@ -16,10 +17,35 @@ export class GameEngine implements EngineHook {
         console.log(`Debug mode: ${this.debugMode ? "ON" : "OFF"}`);
     }
 
+    toggleSceneMode(): void {
+        this.sceneMode = this.sceneMode === "current" ? "all" : "current";
+        this.sceneSystem.setMode(this.sceneMode);
+        if (this.debugMode)
+            console.log(`Scene mode: ${this.sceneMode.toUpperCase()}`);
+    }
+
+    setSceneMode(mode: SceneSystemMode): void {
+        this.sceneMode = mode;
+        this.sceneSystem.setMode(mode);
+        if (this.debugMode)
+            console.log(`Scene mode set to: ${mode.toUpperCase()}`);
+    }
+
+    getSceneMode(): SceneSystemMode {
+        return this.sceneMode;
+    }
+
     frameTick = (context: FrameContext): void => {
         this.inputSystem.update();
-        this.sceneSystem.currentScene?.update?.(context);
-        this.sceneSystem.currentScene?.render?.(context);
+        //this.sceneSystem.currentScene?.update?.(context);
+        //this.sceneSystem.currentScene?.render?.(context);
+        if (this.sceneMode === "current") {
+            this.sceneSystem.currentScene?.update?.(context);
+            this.sceneSystem.currentScene?.render?.(context);
+        } else {
+            this.sceneSystem.updateAllScenes(context);
+            this.sceneSystem.renderAllScenes(context);
+        }
     };
 
     get availableScenes() {
