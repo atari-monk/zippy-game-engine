@@ -2,11 +2,13 @@ export class TouchSystem {
     private touches: Map<number, { x: number; y: number }>;
     private touchStates: Map<number, boolean>;
     private previousTouchStates: Map<number, boolean>;
+    private touchStartPositions: Map<number, { x: number; y: number }>;
 
     constructor() {
         this.touches = new Map();
         this.touchStates = new Map();
         this.previousTouchStates = new Map();
+        this.touchStartPositions = new Map();
     }
 
     setupCanvasEvents(canvas: HTMLElement): void {
@@ -18,6 +20,11 @@ export class TouchSystem {
                 this.#handleTouchEvent(e, canvas);
                 Array.from(e.changedTouches).forEach((touch) => {
                     this.touchStates.set(touch.identifier, true);
+                    const rect = canvas.getBoundingClientRect();
+                    this.touchStartPositions.set(touch.identifier, {
+                        x: touch.clientX - rect.left,
+                        y: touch.clientY - rect.top,
+                    });
                 });
                 e.preventDefault();
             },
@@ -39,6 +46,7 @@ export class TouchSystem {
                 for (const touch of Array.from(e.changedTouches)) {
                     this.touches.delete(touch.identifier);
                     this.touchStates.set(touch.identifier, false);
+                    this.touchStartPositions.delete(touch.identifier);
                 }
                 e.preventDefault();
             },
@@ -51,6 +59,7 @@ export class TouchSystem {
                 for (const touch of Array.from(e.changedTouches)) {
                     this.touches.delete(touch.identifier);
                     this.touchStates.set(touch.identifier, false);
+                    this.touchStartPositions.delete(touch.identifier);
                 }
                 e.preventDefault();
             },
@@ -94,6 +103,16 @@ export class TouchSystem {
             }
         }
         return false;
+    }
+
+    getTouchStartPosition(id: number): { x: number; y: number } | null {
+        return this.touchStartPositions.get(id) || null;
+    }
+
+    getActiveTouchIds(): number[] {
+        return Array.from(this.touchStates.entries())
+            .filter(([_, state]) => state)
+            .map(([id, _]) => id);
     }
 
     getCount(): number {
