@@ -1,4 +1,4 @@
-import { GamepadInputProcessor } from "./gamepad/gamepad-input-processor.js";
+import { GamepadInputProcessor } from "./gamepad-input-processor.js";
 import { KeyboardSystem } from "./keyboard-system.js";
 import { MouseSystem } from "./mouse-system.js";
 import { TouchSystem } from "./touch-system.js";
@@ -24,5 +24,6 @@ export class InputSystem {
     update(): void {
         this.gamepads.update();
         this.mouse.update();
+        this.touches.update();
     }
 }

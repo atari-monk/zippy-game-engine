@@ -1,5 +1,5 @@
 import type { FrameContext } from "zippy-shared-lib";
-import type { Scene } from "../interfaces/scene.js";
+import type { Scene } from "../type/scene.js";
 
 export type SceneSystemMode = "current" | "all";
 
