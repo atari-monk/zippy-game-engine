@@ -1,8 +1,8 @@
 import type { FrameContext, EngineHook } from "zippy-shared-lib";
 import type { Scene } from "../scene-system/scene.js";
 import { SceneSystem } from "../scene-system/scene-system.js";
-import { type SceneSystemMode } from "../scene-system/SceneSystemMode.js";
 import type { InputSystem } from "../input-system/input-system.js";
+import type { SceneSystemMode } from "../scene-system/scene-system-mode.js";
 
 export class GameEngine implements EngineHook {
     debugMode: boolean = false;
