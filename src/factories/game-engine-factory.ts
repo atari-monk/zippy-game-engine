@@ -1,6 +1,6 @@
 import { GameEngine } from "../core/game-engine.js";
 import { InputSystem } from "../input-system/input-system.js";
-import { SceneSystem } from "../system/scene-system.js";
+import { SceneSystem } from "../scene-system/scene-system.js";
 
 export class GameEngineFactory {
     private gameEngine: GameEngine;
