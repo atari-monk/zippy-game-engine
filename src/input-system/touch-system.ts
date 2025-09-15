@@ -1,129 +1,75 @@
-export class TouchSystem {
-    private touches: Map<number, { x: number; y: number }>;
-    private touchStates: Map<number, boolean>;
-    private previousTouchStates: Map<number, boolean>;
-    private touchStartPositions: Map<number, { x: number; y: number }>;
+import type { TouchEventSystem } from "./type/touch-event-system.js";
 
-    constructor() {
-        this.touches = new Map();
-        this.touchStates = new Map();
-        this.previousTouchStates = new Map();
-        this.touchStartPositions = new Map();
-    }
+export class DefaultTouchEventSystem implements TouchEventSystem {
+    private touchStartCallbacks: Set<(event: TouchEvent) => void> = new Set();
+    private touchMoveCallbacks: Set<(event: TouchEvent) => void> = new Set();
+    private touchEndCallbacks: Set<(event: TouchEvent) => void> = new Set();
+    private registeredElements: Set<HTMLElement> = new Set();
 
-    setupCanvasEvents(canvas: HTMLElement): void {
-        const options = { passive: false, capture: false };
+    registerElement(element: HTMLElement): void {
+        if (this.registeredElements.has(element)) return;
 
-        canvas.addEventListener(
+        element.addEventListener(
             "touchstart",
-            (e: TouchEvent) => {
-                this.#handleTouchEvent(e, canvas);
-                Array.from(e.changedTouches).forEach((touch) => {
-                    this.touchStates.set(touch.identifier, true);
-                    const rect = canvas.getBoundingClientRect();
-                    this.touchStartPositions.set(touch.identifier, {
-                        x: touch.clientX - rect.left,
-                        y: touch.clientY - rect.top,
-                    });
-                });
-                e.preventDefault();
-            },
-            options
+            this.handleTouchStart.bind(this),
+            { passive: false }
         );
-
-        canvas.addEventListener(
-            "touchmove",
-            (e: TouchEvent) => {
-                this.#handleTouchEvent(e, canvas);
-                e.preventDefault();
-            },
-            options
-        );
-
-        canvas.addEventListener(
-            "touchend",
-            (e: TouchEvent) => {
-                for (const touch of Array.from(e.changedTouches)) {
-                    this.touches.delete(touch.identifier);
-                    this.touchStates.set(touch.identifier, false);
-                    this.touchStartPositions.delete(touch.identifier);
-                }
-                e.preventDefault();
-            },
-            options
-        );
-
-        canvas.addEventListener(
+        element.addEventListener("touchmove", this.handleTouchMove.bind(this), {
+            passive: false,
+        });
+        element.addEventListener("touchend", this.handleTouchEnd.bind(this), {
+            passive: false,
+        });
+        element.addEventListener(
             "touchcancel",
-            (e: TouchEvent) => {
-                for (const touch of Array.from(e.changedTouches)) {
-                    this.touches.delete(touch.identifier);
-                    this.touchStates.set(touch.identifier, false);
-                    this.touchStartPositions.delete(touch.identifier);
-                }
-                e.preventDefault();
-            },
-            options
+            this.handleTouchEnd.bind(this),
+            { passive: false }
         );
+
+        this.registeredElements.add(element);
     }
 
-    update(): void {
-        this.previousTouchStates = new Map(this.touchStates);
+    unregisterElement(element: HTMLElement): void {
+        if (!this.registeredElements.has(element)) return;
+
+        element.removeEventListener(
+            "touchstart",
+            this.handleTouchStart.bind(this)
+        );
+        element.removeEventListener(
+            "touchmove",
+            this.handleTouchMove.bind(this)
+        );
+        element.removeEventListener("touchend", this.handleTouchEnd.bind(this));
+        element.removeEventListener(
+            "touchcancel",
+            this.handleTouchEnd.bind(this)
+        );
+
+        this.registeredElements.delete(element);
     }
 
-    #handleTouchEvent(e: TouchEvent, canvas: HTMLElement): void {
-        for (const touch of Array.from(e.changedTouches)) {
-            const rect = canvas.getBoundingClientRect();
-            this.touches.set(touch.identifier, {
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top,
-            });
-        }
+    onTouchStart(callback: (event: TouchEvent) => void): void {
+        this.touchStartCallbacks.add(callback);
     }
 
-    isTouching(): boolean {
-        return Array.from(this.touchStates.values()).some((state) => state);
+    onTouchMove(callback: (event: TouchEvent) => void): void {
+        this.touchMoveCallbacks.add(callback);
     }
 
-    isTouchStarted(): boolean {
-        for (const [id, current] of this.touchStates) {
-            const previous = this.previousTouchStates.get(id);
-            if (current && !previous) {
-                return true;
-            }
-        }
-        return false;
+    onTouchEnd(callback: (event: TouchEvent) => void): void {
+        this.touchEndCallbacks.add(callback);
     }
 
-    isTouchEnded(): boolean {
-        for (const [id, current] of this.touchStates) {
-            const previous = this.previousTouchStates.get(id);
-            if (!current && previous) {
-                return true;
-            }
-        }
-        return false;
+    private handleTouchStart(event: TouchEvent): void {
+        this.touchStartCallbacks.forEach((callback) => callback(event));
     }
 
-    getTouchStartPosition(id: number): { x: number; y: number } | null {
-        return this.touchStartPositions.get(id) || null;
+    private handleTouchMove(event: TouchEvent): void {
+        this.touchMoveCallbacks.forEach((callback) => callback(event));
     }
 
-    getActiveTouchIds(): number[] {
-        return Array.from(this.touchStates.entries())
-            .filter(([_, state]) => state)
-            .map(([id, _]) => id);
-    }
-
-    getCount(): number {
-        return this.touches.size;
-    }
-
-    getPositions(): { x: number; y: number }[] {
-        return Array.from(this.touches.values());
-    }
-
-    getPosition(id: number): { x: number; y: number } | null {
-        return this.touches.get(id) || null;
+    private handleTouchEnd(event: TouchEvent): void {
+        this.touchEndCallbacks.forEach((callback) => callback(event));
     }
 }
